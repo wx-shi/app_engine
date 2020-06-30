@@ -20,7 +20,17 @@ type Engine struct {
 }
 
 //NewEngine ...
-func NewEngine() *Engine {
+func NewEngine(ops ...Option) *Engine {
+	eng := defaultEngine()
+
+	for _, op := range ops {
+		op(eng)
+	}
+
+	return eng
+}
+
+func defaultEngine() *Engine {
 	return &Engine{
 		log:       zap.NewExample(),
 		exit:      make(chan bool),
@@ -31,40 +41,45 @@ func NewEngine() *Engine {
 	}
 }
 
-//CancelFunc 注入关闭方法
-func (e *Engine) CancelFunc(fns ...func()) {
-	e.cancelFns = append(e.cancelFns, fns...)
-}
+// Option ...
+type Option func(e *Engine)
 
-//Logger 设置日志
-func (e *Engine) Logger(log *zap.Logger) {
-	e.log = log
-}
-
-//LoadFunc 注入初始化方法
-func (e *Engine) LoadFunc(fns ...func() error) {
-	e.loadFns = append(e.loadFns, fns...)
-}
-
-//DeferFunc 注入初始化完成之后执行的方法
-func (e *Engine) DeferFunc(fns ...func(chan bool) error) {
-	e.deferFns = append(e.deferFns, fns...)
-}
-
-//Startup 注入服务
-func (e *Engine) Server(fns ...func() (Server, error)) error {
-	for _, fn := range fns {
-		s, err := fn()
-		if err != nil {
-			return err
-		}
-		e.servers = append(e.servers, s)
+// WithLog 注入log.
+func WithLog(log *zap.Logger) Option {
+	return func(e *Engine) {
+		e.log = log
 	}
-
-	return nil
 }
 
-//Run 运行
+// WithCancelFunc 注入程序结束执行方法.
+func WithCancelFunc(fns ...func()) Option {
+	return func(e *Engine) {
+		e.cancelFns = append(e.cancelFns, fns...)
+	}
+}
+
+// WithLoadFunc 注入初始化加载方法.
+func WithLoadFunc(fns ...func() error) Option {
+	return func(e *Engine) {
+		e.loadFns = append(e.loadFns, fns...)
+	}
+}
+
+// WithDeferFunc 注入初始化完成后执行的方法.
+func WithDeferFunc(fns ...func(chan bool) error) Option {
+	return func(e *Engine) {
+		e.deferFns = append(e.deferFns, fns...)
+	}
+}
+
+// WithServer 注入server.
+func WithServer(ss ...Server) Option {
+	return func(e *Engine) {
+		e.servers = append(e.servers, ss...)
+	}
+}
+
+//Run 运行.
 func (e *Engine) Run() error {
 	for _, f := range e.loadFns {
 		if err := f(); err != nil {
