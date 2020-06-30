@@ -79,7 +79,7 @@ func WithServer(ss ...Server) Option {
 	}
 }
 
-//Run 运行.
+// Run 运行.
 func (e *Engine) Run() error {
 	for _, f := range e.loadFns {
 		if err := f(); err != nil {
@@ -105,12 +105,12 @@ func (e *Engine) Run() error {
 	return nil
 }
 
-//wait 等待退出命令
+// wait 等待退出命令.
 func (e *Engine) wait() {
 	e.hookSignals()
 }
 
-//Stop 停止
+// stop 停止.
 func (e *Engine) stop() {
 	for _, s := range e.servers {
 		s.GracefulStop()
@@ -121,7 +121,7 @@ func (e *Engine) stop() {
 	}
 }
 
-//退出信号
+// hookSignals 退出信号.
 func (e *Engine) hookSignals() {
 
 	sigChan := make(chan os.Signal, 1)
@@ -137,7 +137,7 @@ func (e *Engine) hookSignals() {
 			time.Sleep(time.Second * 2)
 			return
 		case syscall.SIGHUP:
-			//app.Stop()
+			//...
 		default:
 			return
 		}
